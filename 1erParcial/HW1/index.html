@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tarea1</title>
+</head>
+
+<body>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three/build/three.module.js'; // in case you install THREE.Js change Path
+    let renderer,scene,camera, mesh
+    let colorNew;
+
+    function init(){
+    // Renderer
+    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor("black");  // renderer.setClearColor(new THREE.Color(0,0,0));  to use RGB
+    document.body.appendChild(renderer.domElement);
+
+    // Scene
+    scene = new THREE.Scene();
+    
+    // Virtual Camera
+    let fov = 90;
+    let aspect = window.innerWidth / window.innerHeight;
+    let near = 0.1;
+    let far = 10000;
+    camera = new THREE.PerspectiveCamera(fov,aspect,near,far);
+    camera.position.set(0,0,3);
+
+    // Models
+    let geometry = new THREE.TorusGeometry();
+    let material = new THREE.MeshBasicMaterial({color: "yellow" ,wireframe: true});
+    mesh = new THREE.Mesh(geometry,material);
+
+    // Scene Hierarchy/Graph
+    scene.add(mesh);
+
+    // Render Loop
+    renderLoop();
+
+    }
+
+    function renderLoop(){
+    // Draw Scene
+    renderer.render(scene,camera);
+    updateScene();
+    requestAnimationFrame(renderLoop);
+    }
+
+    function updateScene(){
+    mesh.rotation.y = mesh.rotation.y + 179 + Math.PI / 180;
+    colorNew = Math.floor((Math.random())*2+1);
+    switch(colorNew){
+        case 1:
+        mesh.material.color.set("red");
+            break;
+            case 2:
+            mesh.material.color.set("blue");
+                break;
+                case 3:
+                mesh.material.color.set("yellow");
+                    break;
+                    default:
+                    mesh.material.color.set("yellow");
+                        break;
+    }
+    }
+
+    // Event Listeners/Handlers
+    document.addEventListener("DOMContentLoaded",init);
+
+  </script>
+</body>
+
+</html>
