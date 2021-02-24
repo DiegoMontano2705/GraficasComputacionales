@@ -1,4 +1,7 @@
 import * as THREE from 'https://unpkg.com/three/build/three.module.js'; // in case you install THREE.Js change Path
+import {OrbitControls} from '/js/jsm/controls/OrbitControls.js';
+"using strict";
+
 let renderer,scene,camera, mesh
 
 function init(){
@@ -45,3 +48,8 @@ function updateScene(){
 
 // Event Listeners/Handlers
 document.addEventListener("DOMContentLoaded",init);
+window.addEventListener("resize",function(){
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+});
