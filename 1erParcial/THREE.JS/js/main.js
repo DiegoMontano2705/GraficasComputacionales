@@ -28,7 +28,6 @@ function init(){
   mesh = new THREE.Mesh(geometry,material);
 
   // Scene Hierarchy/Graph
-  scene.add(mesh);
 
   // Render Loop
   renderLoop();
