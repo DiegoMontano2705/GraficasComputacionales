@@ -1,0 +1,642 @@
+<!--
+  Gráficas Computacionales TC3022.501
+  Reto: Paint3D
+
+  Profesor:
+  Luis Palomino
+
+  Integrantes:
+  Diego Montaño A01282875
+  Eugenio Gonzalez A01282852
+  Monica Nava A01570079
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style>
+		html,
+		body {
+			width: 100%;
+			height: 100%;
+			padding: 0;
+			margin: 0;
+			overflow: hidden;
+		}
+
+		.button-container {
+			position: absolute;
+			z-index: 10;
+			bottom: 0;
+		}
+
+		button {
+			width: 100px;
+			border-radius: 16px;
+			margin-bottom: 4px;
+			margin-left: 4px;
+			background-color: 'gray';
+			/* Grey */
+			transition-duration: 0.4s;
+		}
+
+		button:hover {
+			background-color: rgb(76, 175, 79);
+			/* Green */
+		}
+
+		#stat-panel {
+			position: absolute;
+			z-index: 10;
+			bottom: 0;
+		}
+	</style>
+	<title>RetoPain3D</title>
+</head>
+
+<body>
+	<div id='canvas'>
+		<div class='button-container'>
+			<button id='shape1' >Cube</button>
+            <button id='shape2' >Tetrahedron</button>
+            <button id='shape3' >Pill-ish</button>
+            <button id='shape4' >Rectangle</button>
+            <button id='shape5' >Pyramid</button>
+            <br>
+            <button id='shape6' >Trapezoid</button>
+            <button id='shape7' >House</button>
+            <button id='shape8' >Star</button>
+            <button id='shape9' >Cylinder</button>
+            <button id='shape10'>Hexagon</button>
+        </div>
+        <div id='stat-panel'></div>
+    </div>
+    <script type="text/javascript"src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js">
+    </script>
+    <script type="module">
+    import * as THREE from 'https://unpkg.com/three/build/three.module.js';
+    import { OrbitControls } from "https://unpkg.com/three@0.119.0/examples/jsm/controls/OrbitControls.js";
+    import { TransformControls } from "https://unpkg.com/three@0.119.0/examples/jsm/controls/TransformControls.js";
+    import Stats from "https://unpkg.com/three/examples/jsm/libs/stats.module.js";
+    import dat from "https://unpkg.com/three@0.126.1/examples/jsm/libs/dat.gui.module.js";
+
+
+    "using strict";
+
+    // Geometries
+    function cubeGeo() {
+    let cube = new THREE.Shape();
+    cube.lineTo(0, 0, 1, 0);
+    cube.lineTo(1, 0, 1, 1);
+    cube.lineTo(1, 1, 0, 1);
+    cube.lineTo(0, 1, 0, 0);
+    var geometryCube = new THREE.ExtrudeGeometry(cube, {
+      steps: 1,
+      depth: 1,
+      bevelEnabled: false,
+      bevelThickness: 1,
+      bevelSize: 1,
+      bevelOffset: 0,
+      bevelSegments: 0
+    });
+
+    return geometryCube;
+    }
+
+    function teraGeo() {
+    var ptsTetra = [
+      new THREE.Vector3(Math.sqrt(8 / 9), 0, -(1 / 3)),
+      new THREE.Vector3(-Math.sqrt(2 / 9), Math.sqrt(2 / 3), -(1 / 3)),
+      new THREE.Vector3(-Math.sqrt(2 / 9), -Math.sqrt(2 / 3), -(1 / 3)),
+      new THREE.Vector3(0, 0, 1)
+    ];
+    //caras 
+    var facesTetra = [
+      ptsTetra[0].clone(), ptsTetra[2].clone(), ptsTetra[1].clone(),
+      ptsTetra[0].clone(), ptsTetra[1].clone(), ptsTetra[3].clone(),
+      ptsTetra[1].clone(), ptsTetra[2].clone(), ptsTetra[3].clone(),
+      ptsTetra[2].clone(), ptsTetra[0].clone(), ptsTetra[3].clone()
+    ];
+
+    var geomTetra = new THREE.BufferGeometry().setFromPoints(facesTetra);
+
+    return geomTetra;
+    }
+
+    function fig3() {
+    const smileyShape = new THREE.Shape()
+      .absarc(1, 1, 1, 1, Math.PI * 2, false);
+
+    var geometry = new THREE.ExtrudeGeometry(smileyShape, {
+      steps: 2,
+      depth: 2,
+      bevelEnabled: true,
+      bevelThickness: 1,
+      bevelSize: 1,
+      bevelOffset: 0,
+      bevelSegments: 1
+    });
+
+    return geometry;
+    }
+
+    function rectangleGeo() {
+    var rectangle = new THREE.Shape();
+    rectangle.moveTo(1, 1);
+    rectangle.lineTo(1, -2); //-2
+    rectangle.lineTo(-2, -2); //198,-2
+    rectangle.lineTo(-2, 1); //198,-99
+    var geometryRect = new THREE.ExtrudeGeometry(rectangle, {
+      steps: 1,
+      depth: 8,
+      bevelEnabled: true,
+      bevelThickness: 1,
+      bevelSize: 1,
+      bevelOffset: 0,
+      bevelSegments: 0
+    });
+
+    return geometryRect;
+    }
+
+    function pyramidGeo() {
+    var coordinatesPyramid = [
+      new THREE.Vector3(0.5, 0.5, 0.5),
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(1, 0, 1),
+      new THREE.Vector3(1, 0, 0)
+    ];
+    var geomPyramid = new THREE.BufferGeometry().setFromPoints(coordinatesPyramid);
+    geomPyramid.setIndex([
+      0, 1, 2,
+      0, 2, 3,
+      0, 3, 4,
+      0, 4, 1,
+      1, 3, 2,
+      1, 4, 3
+    ]);
+    geomPyramid.computeVertexNormals();
+
+    return geomPyramid;
+    }
+
+    function trapezoidGeo(){
+      var trapezoid = new THREE.Shape();
+      trapezoid.lineTo(-4,-1,-2,8); //-2
+      trapezoid.lineTo(-2,8,3,8); //198,-2
+      trapezoid.lineTo(3,8,5,-1);
+      trapezoid.lineTo(5,-1,-4,-1);  //198,-99
+
+      var geometryTrapezoid= new THREE.ExtrudeGeometry(trapezoid, {
+          steps: 1,
+          depth: 8,
+          bevelEnabled: true,
+          bevelThickness: 1,
+          bevelSize: 1,
+          bevelOffset: 0,
+          bevelSegments: 0
+      });
+
+      return geometryTrapezoid;
+    }
+
+    function casaGeo(){
+      var casa = new THREE.Shape();
+      casa.lineTo(0,0,0,3); //-2
+      casa.lineTo(0,3,1.5,5); //198,-2
+      casa.lineTo(1.5,5,3,3);
+      casa.lineTo(3,3,3,0);  
+      casa.lineTo(3,0,0,0);
+
+      var geometryCasa= new THREE.ExtrudeGeometry(casa, {
+          steps: 1,
+          depth: 8,
+          bevelEnabled: true,
+          bevelThickness: 1,
+          bevelSize: 1,
+          bevelOffset: 0,
+          bevelSegments: 0
+      });
+
+    return geometryCasa;
+    }
+
+    function estrellaGeo(){
+    var star= new THREE.Shape();
+        star.lineTo(0,3,0.5,1); //-2
+        star.lineTo(0.5,1, 3,1); //198,-2
+        star.lineTo(3,1, 1,-0.5);
+        star.lineTo(1,-0.5, 2, -2.5);
+        star.lineTo(2, -2.5, 0 ,-1.5);
+        star.lineTo(0, -1.5, -2, -2.5);
+        star.lineTo(-2, -2.5, -1, -0.5); 
+        star.lineTo(-1,-0.5, -3,1); 
+        star.lineTo(-3,1, -0.5,1);
+        star.lineTo(-0.5, 1, 0,3);
+        star.lineTo(0,3,-0.5, 1);    //pq se ve raro???? ultima linea no se veia
+
+      var geometryStar= new THREE.ExtrudeGeometry(star, {
+          steps: 1,
+          depth: 3,
+          bevelEnabled: true,
+          bevelThickness: 1,
+          bevelSize: 1,
+          bevelOffset: 0,
+          bevelSegments: 0
+      });
+
+    return geometryStar;
+    }
+
+    function cylinderGeo(){
+    var cylinder= new THREE.Shape();
+      //radio 4
+      cylinder.moveTo(2,0);
+      cylinder.absarc( 0, 0, 2, 0, 2 * Math.PI, false );
+
+      var geometryCylinder= new THREE.ExtrudeGeometry(cylinder, {
+          steps: 1,
+          depth: 8,
+          amount: 20,
+          bevelEnabled: true,
+          bevelThickness: 1,
+          bevelSize: 1,
+          bevelOffset: 0,
+          bevelSegments: 0
+      });
+
+    return geometryCylinder;
+    }
+
+    function hexagon(){
+      var hexagon = new THREE.Shape();
+      hexagon.lineTo(-1,4, 1,4); //-2
+      hexagon.lineTo(1,4, 3, 2); //198,-2
+      hexagon.lineTo(3,2, 1,0);
+      hexagon.lineTo(1,0, -1,0);  
+      hexagon.lineTo(-1,0, -3,2);
+      hexagon.lineTo(-3,2, -1,4);
+      hexagon.lineTo(-1,4,-3,2);//198,-99
+
+      var geometryHexagon= new THREE.ExtrudeGeometry(hexagon, {
+          steps: 1,
+          depth: 8,
+          bevelEnabled: true,
+          bevelThickness: 1,
+          bevelSize: 1,
+          bevelOffset: 0,
+          bevelSegments: 0
+      });
+
+      return geometryHexagon;
+    }
+
+
+
+
+    let renderer, scene, camera, cameraControl, mesh, stats, transfControl;
+    let raycaster, mouse = new THREE.Vector2(), INTERSECTED;
+
+    let objects = [];
+    let selectedObj = new THREE.Mesh()
+
+    function init() {
+    // RENDERER
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor("black");
+    document.getElementById('canvas').appendChild(renderer.domElement);
+
+    // RAYCASTER
+    raycaster = new THREE.Raycaster();
+
+    // SCENE
+    scene = new THREE.Scene();
+
+    // CAMERA
+    let fov = 60;
+    let aspect = window.innerWidth / window.innerHeight;
+    let near = 0.1;
+    let far = 10000;
+    camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    camera.position.set(0, 0, 6);
+    //camera.rotation.z = -2;
+    cameraControl = new OrbitControls(camera, renderer.domElement);
+
+    // GRIDHELPER
+    let size = 100.;
+    let divisions = 100;
+    let colorCenterLine = "red";
+    let colorGrid = "grey";
+    let gridHelper = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
+
+    //MESH MODELS -------------------------
+
+    document.getElementById('shape1').addEventListener('click', () => {
+      let geometry = cubeGeo();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+    document.getElementById('shape2').addEventListener('click', () => {
+      let geometry = teraGeo();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+    document.getElementById('shape3').addEventListener('click', () => {
+      let geometry = fig3();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+    document.getElementById('shape4').addEventListener('click', () => {
+      let geometry = rectangleGeo();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+    document.getElementById('shape5').addEventListener('click', () => {
+      let geometry = pyramidGeo();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+    document.getElementById('shape6').addEventListener('click', () => {
+      let geometry = trapezoidGeo();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+    document.getElementById('shape7').addEventListener('click', () => {
+      let geometry = casaGeo();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+    document.getElementById('shape8').addEventListener('click', () => {
+      let geometry = estrellaGeo();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+    document.getElementById('shape9').addEventListener('click', () => {
+      let geometry = cylinderGeo();
+      let material = new THREE.MeshBasicMaterial({ color: "white", wireframe: true, transparent: true });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+
+    document.getElementById('shape10').addEventListener('click', () => {
+      let geometry = hexagon();
+      let material = new THREE.MeshBasicMaterial({ color: "green", wireframe:true } );
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      objects.push(mesh);
+    })
+
+
+    //-------------------------------------
+    // SCENE GRAPH
+    scene.add(gridHelper);
+
+    // GUI
+    let gui = new dat.GUI();
+
+    //fake mesh
+    let mesh = new THREE.Mesh()
+
+    let modelObj = {
+      rotY : 0,
+      rotX : 0,
+      posX : 0,
+      posY : 0,
+      posZ : 0,
+      opacity : 1,
+      wireframe: true,
+      colorPalette: [255, 255, 255],
+      posHome: function () {
+        selectedObj.position.x = 0;
+        selectedObj.position.y = 0;
+        selectedObj.position.z = 0;
+        selectedObj.rotation.y = 0;
+        selectedObj.rotation.x = 0;
+
+        modelObj.rotY = 0;
+        modelObj.rotX = 0;
+        modelObj.posX = 0;
+        modelObj.posY = 0;
+        modelObj.posZ = 0;
+      },
+      del : function(){
+        modelObj.rotY = 0;
+        modelObj.rotX = 0;
+        modelObj.posX = 0;
+        modelObj.posY = 0;
+        modelObj.posZ = 0;
+        modelObj.alpha = 0;
+        modelObj.wireframe = true;
+        modelObj.colorPalette = [255, 255, 255];
+      }
+    }
+
+    // fps model
+    let fpsModel = {
+      showstats: true
+    }
+
+    // wireframe all model
+    let wireframeAllThings = {
+      status: true
+    }
+
+    // view & controller
+    document.addEventListener('mousedown', (event) => {
+      var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
+      vector = vector.unproject(camera);
+
+      var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+
+      var intersects = raycaster.intersectObjects([...objects]);
+
+      if (intersects.length > 0) {
+        console.log(intersects[0]);
+        selectedObj = intersects[0].object
+
+        modelObj.rotX = selectedObj.rotation.x / Math.PI * 180;
+        modelObj.rotY = selectedObj.rotation.y / Math.PI * 180;
+        modelObj.posX = selectedObj.position.x;
+        modelObj.posY = selectedObj.position.y;
+        modelObj.posZ = selectedObj.position.z;
+        modelObj.opacity = selectedObj.material.opacity;
+        modelObj.colorPalette = [selectedObj.material.color.r * 255, selectedObj.material.color.g * 255, selectedObj.material.color.b * 255];
+        //scene.remove(intersects[0].object)
+      }
+    })
+
+    //Scene Options
+    let sceneOptions = gui.addFolder("Scene Options")
+
+    //Change scene background
+    var option_default = function () {
+      this.color_scene = '#000000';
+    };
+    var option_array = new option_default();
+    var opt_none;
+    let backgroundPalette = sceneOptions.addColor(option_array, 'color_scene').name("Scene Color").onChange(function (opt_none) {
+      renderer.setClearColor(opt_none);
+    });
+
+    // Grid in Z 
+    let chbGridHelper = sceneOptions.add(gridHelper, "visible").setValue(false).name("Floor Grid");
+
+    /* Show or Hide Status*/
+    let statsTable = sceneOptions.add(fpsModel, "showstats").setValue(true).name("Show Stats").onChange(function (value) {
+      if (value) {
+        stats.showPanel(0);
+      } else {
+        stats.showPanel(-1);
+      }
+    });
+
+    // Wireframe all objects
+    let wireframeAll = sceneOptions.add(wireframeAllThings,"status").setValue(true).name("Wireframe All").onChange(function(value){
+      var i;
+      if(value){
+        console.log("All wire");
+        for(i in objects){
+          objects[i].material.wireframe = true; 
+        }
+      }else {
+        console.log("None wire");
+        for(i in objects){
+          objects[i].material.wireframe = false; 
+        }
+      }
+    });
+
+    // Position Menu
+    let posMenu = gui.addFolder("Model's Position Menu");
+    //posMenu.open();
+
+    /* Model Position */
+    //Position X
+    let sliderPosX = posMenu.add(modelObj, "posX").min(-10).max(10).step(0.5).name("X").listen().onChange((value)=>{
+        selectedObj.position.x = value;
+    });
+
+    //Position Y
+    let sliderPosY = posMenu.add(modelObj, "posY").min(-10).max(10).step(0.5).name("Y").listen().onChange((value)=>{
+        selectedObj.position.y = value;
+    });
+
+    //Position Z
+    let sliderPosZ = posMenu.add(modelObj, "posZ").min(-10).max(10).step(0.5).name("Z").listen().onChange((value)=>{
+      selectedObj.position.z = value;
+    });
+
+
+    // Button Position Home
+    let btnPosHome = posMenu.add(modelObj, "posHome").name("Restart");
+
+    // Rotation Menu
+    let rotMenu = gui.addFolder("Model's Rotation Menu");
+
+    // Model Orientation
+
+    // Rotation Y
+    let sliderRotY = rotMenu.add(modelObj, "rotY").min(-180).max(180).step(5).name("Y (deg)").listen().onChange((value)=> {
+      selectedObj.rotation.y = value * Math.PI / 180;
+    });
+    //Rotation X
+    let sliderRotX = rotMenu.add(modelObj, "rotX").min(-180).max(180).step(5).name("X (deg)").listen().onChange((value)=> {
+      selectedObj.rotation.x = value * Math.PI / 180;
+    });
+
+
+    // Model's Appearance Menu
+    let appearMenu = gui.addFolder("Model's Appeareance Menu");
+
+    // Model Draw Mode
+    let chbWireframe = appearMenu.add(modelObj, "wireframe").setValue(true).name("Wireframe").onChange((value)=>{
+      selectedObj.material.wireframe = value;
+    });
+
+    let colorPalette = appearMenu.addColor(modelObj, "colorPalette").name("Color Palette").listen().onChange((color)=>{
+      selectedObj.material.color = new THREE.Color(color[0] / 255, color[1] / 255, color[2] / 255);
+    });
+
+    /*
+    let deleteMeshh = appearMenu.add(modelObj, "del").name("Delete selected").onChange(()=>{
+      scene.remove(selectedObj);
+      //objects.filter((x)=>{x!=selectedObj});
+    });*/
+
+    let opacityMesh = appearMenu.add(modelObj,"opacity").min(0.0).max(1).step(0.1).name("Opacity").listen().onChange((value)=> {
+      selectedObj.material.opacity = value;
+    });
+
+    gui.close();
+
+    // STATS
+    stats = new Stats();
+    stats.showPanel(0);
+    document.getElementById('stat-panel').appendChild(stats.dom);
+
+
+
+    // RENDER LOOP
+    renderLoop();
+    }
+
+
+    function renderLoop() {
+    stats.begin();
+    renderer.render(scene, camera); // DRAW SCENE
+    updateScene();
+    //scene.add(mesh)
+    stats.end();
+    stats.update();
+    requestAnimationFrame(renderLoop);
+    }
+
+    function updateScene() {
+
+    }
+
+    // EVENT LISTENERS & HANDLERS
+    document.addEventListener("DOMContentLoaded", init);
+
+    window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    cameraControl.update();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    }, false);
+
+    </script>
+</body>
+</html>
